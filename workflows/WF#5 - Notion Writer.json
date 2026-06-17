@@ -1,0 +1,165 @@
+{
+  "name": "WF#5 - Notion Writer",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "37bbddfd-30d4-802e-af73-d140c3ec889b",
+          "mode": "list",
+          "cachedResultName": "Deal Pipeline",
+          "cachedResultUrl": "https://app.notion.com/p/37bbddfd30d4802eaf73d140c3ec889b"
+        },
+        "title": "={{ $json.address }}",
+        "simple": "=",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "ARV Confidence|select",
+              "selectValue": "={{ $json.arvConfidence }}"
+            },
+            {
+              "key": "ARV Estimate|number",
+              "numberValue": "={{ $json.arvEstimate }}"
+            },
+            {
+              "key": "Asking Price|number",
+              "numberValue": "={{ $json.askingPrice }}"
+            },
+            {
+              "key": "Assignment Offer|number",
+              "numberValue": "={{ $json.assignmentOffer }}"
+            },
+            {
+              "key": "City/State|rich_text",
+              "textContent": "={{ $json.city }}, {{ $json.state }}"
+            },
+            {
+              "key": "Created|date",
+              "date": "={{ $json.receivedAt }}"
+            },
+            {
+              "key": "Deal Score|number",
+              "numberValue": "={{ $json.dealScore }}"
+            },
+            {
+              "key": "Est. Monthly Payment|number",
+              "numberValue": "={{ $json.monthlyPI }}"
+            },
+            {
+              "key": "Max Offer (MAO)|number",
+              "numberValue": "={{ $json.maxOffer }}"
+            },
+            {
+              "key": "Repair Estimate|number",
+              "numberValue": "={{ $json.repairEstimate }}"
+            },
+            {
+              "key": "Run ID|rich_text",
+              "textContent": "={{ $json.runId }}"
+            },
+            {
+              "key": "Status|select",
+              "selectValue": "New"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {
+              "type": "heading_2",
+              "textContent": "Marketing Summary"
+            },
+            {
+              "textContent": "={{ $json.strategy.marketingSummary }}"
+            },
+            {
+              "type": "heading_2",
+              "textContent": "Target Buyers"
+            },
+            {
+              "textContent": "={{ $json.strategy.targetBuyerCriteria.join('\\n') }}"
+            },
+            {
+              "type": "heading_2",
+              "textContent": "Asset Highlights"
+            },
+            {
+              "textContent": "={{ $json.strategy.assetHighlights.join('\\n') }}"
+            },
+            {
+              "type": "heading_2",
+              "textContent": "Negotiation Points"
+            },
+            {
+              "textContent": "={{ $json.strategy.negotiationTalkingPoints.join('\\n') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d1c8ab60-f10f-4149-8c9f-a39c2c663877",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "IovQ1D23vQT0kMxy",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -192,
+        -224
+      ],
+      "id": "60aafc99-6bef-47a1-b7dc-c2aef2c6b046",
+      "name": "Lead In1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead In1": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a90010cd-ccc3-4a93-b325-9929b1172fd1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e39104d870cd5e804818004105f111ac13a666821137b622260ccc9b3d211ffb"
+  },
+  "nodeGroups": [],
+  "id": "u8ifhtQKkG5XowoA",
+  "tags": [
+    {
+      "updatedAt": "2026-06-10T13:29:13.876Z",
+      "createdAt": "2026-06-10T13:29:13.876Z",
+      "id": "GLSQAnDvjhKmnGSP",
+      "name": "Testing"
+    }
+  ]
+}

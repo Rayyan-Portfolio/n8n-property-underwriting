@@ -1,0 +1,64 @@
+{
+  "name": "WF#3 - Math Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// WF3 - Investment Math Engine\nconst lead = $input.item.json;\n\n// --- configurable assumptions (stored with the deal for auditability) ---\nconst A = {\n  downPct: 0.20,         // 20% down payment\n  annualRate: 0.07,      // 7% mortgage interest\n  termYears: 30,\n  assignmentFee: 10000,  // wholesaler assignment fee\n  arvRule: 0.70,         // the 70% rule\n  postRepairUplift: 1.15 // assumed value lift after repairs\n};\n\nconst sqft   = Number(lead.sqft) || 0;\nconst age    = Number(lead.propertyAgeYears) || 0;\nconst cond   = (lead.condition || 'unknown').toLowerCase();\nconst asking = Number(lead.askingPrice) || 0;\nconst regionMedian = Number(lead.medianHomeValue) || null;\n\n// --- repair estimate: $/sqft by condition, bumped by age ---\nconst baseRate = ({ good: 15, fair: 35, poor: 65, unknown: 35 })[cond] ?? 35;\nconst ageBump  = age > 50 ? 15 : age > 30 ? 8 : age > 15 ? 4 : 0;\nconst repairRatePerSqft = baseRate + ageBump;\nconst repairEstimate = Math.round(sqft * repairRatePerSqft);\n\n// --- ARV: blend area median home value with an asking-based estimate ---\nconst arvInputs = [];\nif (regionMedian) arvInputs.push(regionMedian);\nif (asking) arvInputs.push(Math.round(asking * A.postRepairUplift));\nconst arvEstimate = arvInputs.length\n  ? Math.round(arvInputs.reduce((a, b) => a + b, 0) / arvInputs.length)\n  : null;\n\n// confidence: depends on whether we had real regional data\nconst arvConfidence = !arvEstimate ? 'Low'\n  : (regionMedian && lead.enrichmentConfidence === 'high') ? 'High'\n  : regionMedian ? 'Medium' : 'Low';\n\n// --- Maximum Allowable Offer (70% rule) ---\nconst maxOffer = arvEstimate\n  ? Math.max(0, Math.round(arvEstimate * A.arvRule - repairEstimate))\n  : null;\n\n// --- assignment / wholesale offer ---\nconst assignmentOffer = maxOffer != null ? Math.max(0, maxOffer - A.assignmentFee) : null;\n\n// --- mortgage metrics (on the acquisition price = maxOffer, fallback asking) ---\nconst purchase   = maxOffer || asking || 0;\nconst loanAmount = Math.round(purchase * (1 - A.downPct));\nconst mr = A.annualRate / 12;\nconst n  = A.termYears * 12;\nconst monthlyPI = loanAmount > 0\n  ? Math.round(loanAmount * (mr * Math.pow(1 + mr, n)) / (Math.pow(1 + mr, n) - 1))\n  : 0;\n\n// --- deal score (0-100), simple heuristic ---\nlet dealScore = 50;\nif (asking && maxOffer) {\n  const spreadPct = (maxOffer - asking) / asking; // >0 = our max exceeds asking (room to deal)\n  dealScore = Math.round(50 + spreadPct * 120);\n}\nif (arvConfidence === 'Low') dealScore = Math.round(dealScore * 0.8);\ndealScore = Math.max(0, Math.min(100, dealScore));\n\nreturn {\n  json: {\n    ...lead,\n    repairRatePerSqft,\n    repairEstimate,\n    arvEstimate,\n    arvConfidence,\n    maxOffer,\n    assignmentOffer,\n    loanAmount,\n    monthlyPI,\n    dealScore,\n    assumptions: A,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d146f6ad-e955-4219-a72b-c0d9f896fc45",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        -144
+      ],
+      "id": "48d49671-9a78-4692-a74b-27cc2f34dc75",
+      "name": "Lead In"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead In": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1896ed51-3328-4350-81f2-cef5303023b0",
+  "meta": {
+    "instanceId": "e39104d870cd5e804818004105f111ac13a666821137b622260ccc9b3d211ffb"
+  },
+  "nodeGroups": [],
+  "id": "7NVIG8uEOgyDU6XE",
+  "tags": [
+    {
+      "updatedAt": "2026-06-10T13:29:13.876Z",
+      "createdAt": "2026-06-10T13:29:13.876Z",
+      "id": "GLSQAnDvjhKmnGSP",
+      "name": "Testing"
+    }
+  ]
+}

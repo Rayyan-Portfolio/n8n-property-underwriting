@@ -1,0 +1,105 @@
+{
+  "name": "WF#4 - AI Strategy",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "YOUR_GEMINI_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    { \"parts\": [ { \"text\": \"You are a real estate wholesaling analyst. Using the property and market data, produce a resale strategy for assigning this contract to investor buyers. Property: {{ $json.oneLineAddress }}, {{ $json.beds }} bed / {{ $json.baths }} bath, {{ $json.sqft }} sqft, built {{ $json.yearBuilt }}, condition {{ $json.condition }}. Asking ${{ $json.askingPrice }}. Estimated ARV ${{ $json.arvEstimate }} (confidence {{ $json.arvConfidence }}). Repair estimate ${{ $json.repairEstimate }}. Max offer ${{ $json.maxOffer }}. Assignment offer ${{ $json.assignmentOffer }}. Area: {{ $json.regionName }}, median income ${{ $json.medianIncome }}.\" } ] }\n  ],\n  \"generationConfig\": {\n    \"responseMimeType\": \"application/json\",\n    \"responseSchema\": {\n      \"type\": \"OBJECT\",\n      \"properties\": {\n        \"targetBuyerCriteria\": { \"type\": \"ARRAY\", \"items\": { \"type\": \"STRING\" } },\n        \"assetHighlights\": { \"type\": \"ARRAY\", \"items\": { \"type\": \"STRING\" } },\n        \"negotiationTalkingPoints\": { \"type\": \"ARRAY\", \"items\": { \"type\": \"STRING\" } },\n        \"marketingSummary\": { \"type\": \"STRING\" }\n      },\n      \"required\": [\"targetBuyerCriteria\", \"assetHighlights\", \"negotiationTalkingPoints\", \"marketingSummary\"]\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        -144
+      ],
+      "id": "a7f762f3-8796-4c18-a3ae-f9a8470de28a",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Math In').first().json;\nconst resp = $input.item.json;\n\nlet s = null;\ntry {\n  const text = resp?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';\n  s = JSON.parse(text);\n} catch (e) { s = null; }\n\nif (!s || !s.marketingSummary) {\n  s = {\n    targetBuyerCriteria: ['Cash buyers / fix-and-flip investors active in ' + (lead.regionName || 'this market')],\n    assetHighlights: [\n      lead.beds + ' bed / ' + lead.baths + ' bath, ' + lead.sqft + ' sqft (built ' + lead.yearBuilt + ')',\n      'Estimated ARV $' + (lead.arvEstimate ?? 'n/a') + ' (' + (lead.arvConfidence ?? 'n/a') + ' confidence)'\n    ],\n    negotiationTalkingPoints: [\n      'Max allowable offer $' + (lead.maxOffer ?? 'n/a'),\n      'Assignment offer $' + (lead.assignmentOffer ?? 'n/a')\n    ],\n    marketingSummary: 'Investment opportunity at ' + lead.oneLineAddress + '. Estimated ARV $' +\n      (lead.arvEstimate ?? 'n/a') + ', repairs ~$' + (lead.repairEstimate ?? 'n/a') + '.',\n    strategySource: 'fallback-template'\n  };\n} else {\n  s.strategySource = 'gemini';\n  s.targetBuyerCriteria = s.targetBuyerCriteria ?? [];\n  s.assetHighlights = s.assetHighlights ?? [];\n  s.negotiationTalkingPoints = s.negotiationTalkingPoints ?? [];\n}\n\nreturn { json: { ...lead, strategy: s } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -272
+      ],
+      "id": "133ebe1d-22b5-405c-8a71-8167b3a18331",
+      "name": "Parse Strategy"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        -256
+      ],
+      "id": "fc9a0346-2735-4b43-bc1c-5457e04d089d",
+      "name": "Math In"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Parse Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Math In": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f703938a-903e-469b-91b4-a9a8dc8c859f",
+  "meta": {
+    "instanceId": "e39104d870cd5e804818004105f111ac13a666821137b622260ccc9b3d211ffb"
+  },
+  "nodeGroups": [],
+  "id": "SX358337V0pOV23m",
+  "tags": [
+    {
+      "updatedAt": "2026-06-10T13:29:13.876Z",
+      "createdAt": "2026-06-10T13:29:13.876Z",
+      "id": "GLSQAnDvjhKmnGSP",
+      "name": "Testing"
+    }
+  ]
+}

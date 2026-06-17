@@ -1,0 +1,64 @@
+{
+  "name": "WF#1 - Validate & Normalize",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// WF1 - Validate & Normalize\nconst input = $input.item.json;\nconst lead = input.body ?? input; // webhook payloads arrive under `body`\n\nconst errors = [];\nfunction num(v) {\n  if (v === null || v === undefined || v === '') return null;\n  const n = Number(String(v).replace(/[^0-9.\\-]/g, ''));\n  return Number.isFinite(n) ? n : null;\n}\n\nconst address = (lead.address ?? '').toString().trim();\nconst city    = (lead.city ?? '').toString().trim();\nconst state   = (lead.state ?? '').toString().trim().toUpperCase();\nconst zip     = (lead.zip ?? '').toString().trim();\nconst beds    = num(lead.beds);\nconst baths   = num(lead.baths);\nconst sqft    = num(lead.sqft);\nconst yearBuilt   = num(lead.yearBuilt);\nconst askingPrice = num(lead.askingPrice);\nconst condition   = (lead.condition ?? 'unknown').toString().trim().toLowerCase();\nconst notes       = (lead.notes ?? '').toString().trim();\n\nif (!address) errors.push('address is required');\nif (!city) errors.push('city is required');\nif (!/^[A-Z]{2}$/.test(state)) errors.push('state must be a 2-letter code');\nif (!/^\\d{5}(-\\d{4})?$/.test(zip)) errors.push('zip must be 5 digits');\nif (sqft === null || sqft <= 0) errors.push('sqft must be a positive number');\nif (yearBuilt === null || yearBuilt < 1800 || yearBuilt > 2100) errors.push('yearBuilt looks invalid');\nif (askingPrice === null || askingPrice <= 0) errors.push('askingPrice must be a positive number');\n\nif (errors.length) {\n  throw new Error('Validation failed: ' + errors.join('; '));\n}\n\nconst stamp = new Date().toISOString();\nconst runId = (address + '|' + zip + '|' + stamp)\n  .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);\n\nreturn {\n  json: {\n    runId,\n    receivedAt: stamp,\n    address, city, state, zip,\n    oneLineAddress: `${address}, ${city}, ${state} ${zip}`,\n    beds, baths, sqft, yearBuilt,\n    propertyAgeYears: new Date().getFullYear() - yearBuilt,\n    askingPrice, condition, notes,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        -240
+      ],
+      "id": "2ef0cdcf-221f-4bf4-9484-fca58b4051f6",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -368,
+        -240
+      ],
+      "id": "06178114-3570-4ee1-b3d9-37e4ea531617",
+      "name": "Lead In"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead In": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c57500f9-5da0-4ec1-8b96-52006f427f28",
+  "meta": {
+    "instanceId": "e39104d870cd5e804818004105f111ac13a666821137b622260ccc9b3d211ffb"
+  },
+  "nodeGroups": [],
+  "id": "mTmaIroNXtTWHO6v",
+  "tags": [
+    {
+      "updatedAt": "2026-06-10T13:29:13.876Z",
+      "createdAt": "2026-06-10T13:29:13.876Z",
+      "id": "GLSQAnDvjhKmnGSP",
+      "name": "Testing"
+    }
+  ]
+}

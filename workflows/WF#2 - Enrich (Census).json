@@ -1,0 +1,251 @@
+{
+  "name": "WF#2 - Enrich (Census)",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Lead In').item.json;\nconst geo = $input.item.json;\n\nconst matches = geo?.result?.addressMatches ?? [];\nif (!matches.length) {\n  return { json: { ...lead, geocodeStatus: 'nomatch' } };\n}\nconst tract = matches[0].geographies?.['Census Tracts']?.[0] ?? {};\nreturn {\n  json: {\n    ...lead,\n    geocodeStatus: 'matched',\n    matchedAddress: matches[0].matchedAddress ?? null,\n    fipsState: tract.STATE ?? null,\n    fipsCounty: tract.COUNTY ?? null,\n    fipsTract: tract.TRACT ?? null,\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -256
+      ],
+      "id": "18831f2f-b7b6-432d-a8b7-1193456a2544",
+      "name": "Parse FIPS"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f65e59cc-9595-4830-a659-8c68d7667856",
+              "leftValue": "={{ $json.geocodeStatus }}",
+              "rightValue": "matched",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        -256
+      ],
+      "id": "59ceceb2-e6ad-472d-9a68-ee2444e15faa",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Lead In').item.json;\nreturn {\n  json: {\n    ...lead,\n    fipsState: null, fipsCounty: null, fipsTract: null,\n    regionName: null,\n    medianHomeValue: null, medianIncome: null, population: null,\n    enrichmentConfidence: 'low',\n    enrichmentNote: 'address not geocoded - proceeding with form data only',\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -160
+      ],
+      "id": "30d692f9-141e-4f55-a02d-202688154f55",
+      "name": "Enrichment Fallback"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Lead In').first().json;\nconst fips = $('Parse FIPS').first().json;\nconst rows = $input.all().map(i => i.json);\n\n// Census returns HTTP 200 + HTML for bad keys — n8n treats that as SUCCESS, not error.\nfunction acsFailed(rows) {\n  if (!rows.length) return true;\n  for (const row of rows) {\n    const raw = typeof row === 'string' ? row : row?.data ?? JSON.stringify(row);\n    if (typeof raw === 'string' && (raw.includes('<html') || raw.includes('Invalid Key'))) return true;\n  }\n  return false;\n}\n\nfunction acsFallback(note) {\n  return [{\n    json: {\n      ...lead,\n      fipsState: fips.fipsState,\n      fipsCounty: fips.fipsCounty,\n      fipsTract: fips.fipsTract,\n      regionName: null,\n      medianHomeValue: null,\n      medianIncome: null,\n      population: null,\n      enrichmentConfidence: 'low',\n      enrichmentNote: note,\n    },\n  }];\n}\n\nif (acsFailed(rows)) {\n  return acsFallback('ACS lookup failed - proceeding with form data only');\n}\n\nconst toArr = (r) => Array.isArray(r) ? r : Object.values(r);\n\nlet name = null, mhv = null, mi = null, pop = null;\ntry {\n  const header = toArr(rows[0]);\n  const data   = toArr(rows[1]);\n  if (!data || header.indexOf('NAME') < 0) {\n    return acsFallback('ACS lookup failed - proceeding with form data only');\n  }\n  const idx = (k) => header.indexOf(k);\n  name = data[idx('NAME')] ?? null;\n  mhv  = Number(data[idx('B25077_001E')]);\n  mi   = Number(data[idx('B19013_001E')]);\n  pop  = Number(data[idx('B01003_001E')]);\n} catch (e) {\n  return acsFallback('ACS lookup failed - proceeding with form data only');\n}\n\nconst ok = (n) => Number.isFinite(n) && n > 0;\n\nreturn [{\n  json: {\n    ...lead,\n    fipsState: fips.fipsState,\n    fipsCounty: fips.fipsCounty,\n    fipsTract: fips.fipsTract,\n    regionName: name,\n    medianHomeValue: ok(mhv) ? mhv : null,\n    medianIncome: ok(mi) ? mi : null,\n    population: ok(pop) ? pop : null,\n    enrichmentConfidence: ok(mhv) ? 'high' : 'low',\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -448
+      ],
+      "id": "23340a68-70f6-4687-80f7-c641cf2c22b1",
+      "name": "Shape Enrichment"
+    },
+    {
+      "parameters": {
+        "url": "https://api.census.gov/data/2023/acs/acs5",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={\n  \"get\": \"NAME,B25077_001E,B19013_001E,B01003_001E\",\n  \"for\": \"tract:{{ $json.fipsTract }}\",\n  \"in\": \"state:{{ $json.fipsState }} county:{{ $json.fipsCounty }}\",\n  \"key\": \"YOUR_CENSUS_API_KEY\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        -352
+      ],
+      "id": "edda5562-a1d6-44de-9d59-928a067ba68e",
+      "name": "ACS",
+      "retryOnFail": true,
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "address",
+              "value": "={{ $json.oneLineAddress }}"
+            },
+            {
+              "name": "benchmark",
+              "value": "Public_AR_Current"
+            },
+            {
+              "name": "vintage",
+              "value": "Current_Current"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        112,
+        -256
+      ],
+      "id": "8056f1a0-b3d1-4dec-be2e-0cc04cdae1e6",
+      "name": "Geocode",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Lead In').item.json;\nconst fips = $('Parse FIPS').item.json;\nreturn {\n  json: {\n    ...lead,\n    fipsState: fips.fipsState ?? null,\n    fipsCounty: fips.fipsCounty ?? null,\n    fipsTract: fips.fipsTract ?? null,\n    regionName: null,\n    medianHomeValue: null,\n    medianIncome: null,\n    population: null,\n    enrichmentConfidence: 'low',\n    enrichmentNote: 'ACS lookup failed - proceeding with form data only',\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -256
+      ],
+      "id": "77646c60-eca9-4043-b59a-14622d9fc936",
+      "name": "ACS Fallback"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -128,
+        -256
+      ],
+      "id": "21868fd1-e0f2-4c4d-a0f6-d9c5f7d7d273",
+      "name": "Lead In"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Parse FIPS": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "ACS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enrichment Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ACS": {
+      "main": [
+        [
+          {
+            "node": "Shape Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ACS Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geocode": {
+      "main": [
+        [
+          {
+            "node": "Parse FIPS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead In": {
+      "main": [
+        [
+          {
+            "node": "Geocode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "360ba80b-e848-4159-83e5-44e3552a6a47",
+  "meta": {
+    "instanceId": "e39104d870cd5e804818004105f111ac13a666821137b622260ccc9b3d211ffb"
+  },
+  "nodeGroups": [],
+  "id": "rDEyN3NbvRzTVBig",
+  "tags": [
+    {
+      "updatedAt": "2026-06-10T13:29:13.876Z",
+      "createdAt": "2026-06-10T13:29:13.876Z",
+      "id": "GLSQAnDvjhKmnGSP",
+      "name": "Testing"
+    }
+  ]
+}

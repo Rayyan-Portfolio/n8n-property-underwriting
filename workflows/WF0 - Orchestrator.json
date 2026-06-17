@@ -1,0 +1,332 @@
+{
+  "name": "WF0 - Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "663112fb-344e-402d-b99e-9a4af52e2ee4",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "bbc3b660-9cef-4cf4-a437-ef82770b222c",
+      "name": "Webhook",
+      "webhookId": "663112fb-344e-402d-b99e-9a4af52e2ee4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        -16
+      ],
+      "id": "a3161166-c521-4fe0-b4d4-11c1645c1cdc",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "rDEyN3NbvRzTVBig",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/rDEyN3NbvRzTVBig",
+          "cachedResultName": "WF#2 - Enrich (Census)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "b9357521-189e-4b21-a36f-8a770c81aabe",
+      "name": "Call WF2"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "mTmaIroNXtTWHO6v",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/mTmaIroNXtTWHO6v"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        -16
+      ],
+      "id": "7eccf3c4-189c-4f5d-bc6b-89234f464545",
+      "name": "Call WF1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "7NVIG8uEOgyDU6XE",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/7NVIG8uEOgyDU6XE",
+          "cachedResultName": "WF#3 - Math Engine"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        -16
+      ],
+      "id": "3ee8ed86-b358-4789-a031-f1657ed5a786",
+      "name": "Call WF3"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "SX358337V0pOV23m",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/SX358337V0pOV23m",
+          "cachedResultName": "WF#4 - AI Strategy"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        896,
+        -16
+      ],
+      "id": "f23b036d-4201-4e95-a404-194573d078bc",
+      "name": "Call WF4"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "u8ifhtQKkG5XowoA",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/u8ifhtQKkG5XowoA",
+          "cachedResultName": "WF#5 - Notion Writer"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        -16
+      ],
+      "id": "50795487-fb43-49d8-a97d-edb2c969a71e",
+      "name": "Call WF5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5bfbe18b-7a0c-4ef7-9be2-9d47f66e907d",
+              "name": "status",
+              "value": "received",
+              "type": "string"
+            },
+            {
+              "id": "c94a1159-403d-434a-98e3-1bbbcfc9a8a7",
+              "name": "runId",
+              "value": "={{ $('Call WF4').item.json.runId }}",
+              "type": "string"
+            },
+            {
+              "id": "cb7ccea7-5387-4347-828e-54229b4b8faa",
+              "name": "address",
+              "value": "={{ $('Call WF4').item.json.address }}",
+              "type": "string"
+            },
+            {
+              "id": "d03b649c-4de6-4dea-87cd-8a7eaec1e3ef",
+              "name": "dealScore",
+              "value": "={{ $('Call WF4').item.json.dealScore }}",
+              "type": "string"
+            },
+            {
+              "id": "df2d3c6f-5021-42f5-892c-4d9690e7fe76",
+              "name": "arvEstimate",
+              "value": "={{ $('Call WF4').item.json.arvEstimate }}",
+              "type": "string"
+            },
+            {
+              "id": "e91eb7d2-e911-47b4-8de4-eddd70257a94",
+              "name": "arvConfidence",
+              "value": "={{ $('Call WF4').item.json.arvConfidence }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        -16
+      ],
+      "id": "5f955972-6d96-4e57-ac8d-3bd1e095ac78",
+      "name": "Build Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Call WF1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Call WF2": {
+      "main": [
+        [
+          {
+            "node": "Call WF3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call WF1": {
+      "main": [
+        [
+          {
+            "node": "Call WF2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call WF3": {
+      "main": [
+        [
+          {
+            "node": "Call WF4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call WF4": {
+      "main": [
+        [
+          {
+            "node": "Call WF5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call WF5": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6c5a597f-5cc5-45e7-83fe-3012a47a5fef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e39104d870cd5e804818004105f111ac13a666821137b622260ccc9b3d211ffb"
+  },
+  "nodeGroups": [],
+  "id": "T05tbl9BOwz6uHfU",
+  "tags": [
+    {
+      "updatedAt": "2026-06-10T13:29:13.876Z",
+      "createdAt": "2026-06-10T13:29:13.876Z",
+      "id": "GLSQAnDvjhKmnGSP",
+      "name": "Testing"
+    }
+  ]
+}
